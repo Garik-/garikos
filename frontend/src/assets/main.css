@@ -1,0 +1,17 @@
+body {
+  background-image: url(/bg.jpg);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* background-color: rgba(24, 36, 51, 0.35); 
+*/
+.card {
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 0 10px 1px rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(15px);
+  overflow: hidden;
+}
