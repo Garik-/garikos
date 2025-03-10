@@ -2,8 +2,10 @@
 import TemperatureCard from './TemperatureCard.vue'
 import HumidityCard from './HumidityCard.vue'
 import PressureCard from './PressureCard.vue'
+import { BALCONY_SSE_URL } from '@/config/constants'
+import { dateToLocaleString } from '@/utils/formatter'
 
-import { onMounted, onUnmounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { createSSEConnection } from '@/services/sseService'
 
 import type { SeriesData } from '@/utils/charts'
@@ -14,6 +16,7 @@ type Data = {
     temperature: number
     humidity: number
     pressure: number
+    timestamp: string
   }
   chart: {
     temperature: SeriesData
@@ -22,21 +25,17 @@ type Data = {
 }
 
 const data: Ref<Data> = ref({
-  current: { temperature: 0, humidity: 0, pressure: 0 },
+  current: { temperature: 0, humidity: 0, pressure: 0, timestamp: '0001-01-01T00:00:00Z' },
   chart: { temperature: [], pressure: [] },
 })
 
-const currentTime = ref('')
+const currentTime = computed(() => dateToLocaleString(new Date(data.value.current.timestamp)))
 
 let eventSource: EventSource | null = null
 
 onMounted(() => {
-  eventSource = createSSEConnection('http://raspberrypi.local:8001/subscribe', (d) => {
+  eventSource = createSSEConnection(BALCONY_SSE_URL, (d) => {
     data.value = d as Data
-    currentTime.value = new Date().toLocaleString('ru-RU', {
-      dateStyle: 'short',
-      timeStyle: 'short',
-    })
   })
 })
 

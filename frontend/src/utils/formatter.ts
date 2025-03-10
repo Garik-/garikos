@@ -3,6 +3,12 @@ export const formatter = new Intl.NumberFormat('ru-RU', {
   maximumFractionDigits: 2,
 })
 
+export const dateToLocaleString = (date: Date) =>
+  date.toLocaleString('ru-RU', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  })
+
 export function formatBytes(bytes: number) {
   const units = [
     { unit: 'байт', value: 1 },

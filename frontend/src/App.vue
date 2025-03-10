@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import BalconySensors from '@/components/BalconySensors.vue'
+import BalconySensors from '@/components/BalconySensors/BalconySensors.vue'
 import SystemStatusCard from '@/components/SystemStatusCard.vue'
 import ProcessesCard from './components/ProcessesCard.vue'
 import AppsPanel from './components/AppsPanel.vue'
