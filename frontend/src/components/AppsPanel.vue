@@ -15,9 +15,9 @@ import IconAdguard from './icons/IconAdguard.vue'
           <div class="col-sm-3 col-lg-3">
             <div class="card">
               <div class="card-body">
-                <a href="http://raspberrypi.local:18888/" target="_blank" class="app-link"
-                  ><IconAdguard
-                /></a>
+                <a href="http://raspberrypi.local:18888/" target="_blank" class="app-link">
+                  <IconAdguard />
+                </a>
               </div>
             </div>
           </div>
