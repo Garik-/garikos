@@ -9,8 +9,6 @@
     class="icon"
   >
     <!-- Generator: Sketch 53.2 (72643) - https://sketchapp.com -->
-    <title>logo_home</title>
-    <desc>Created with Sketch.</desc>
     <g id="logo_home" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
       <g id="home" transform="translate(1.000000, 1.000000)" fill-rule="nonzero">
         <g id="Group-2">
