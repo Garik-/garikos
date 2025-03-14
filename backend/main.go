@@ -132,7 +132,30 @@ func diskHandler(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, res *Response) error {
+	_, err := io.WriteString(w, "data: ")
+	if err != nil {
+		return fmt.Errorf("writeString: %w", err)
+	}
+
+	err = encoder.Encode(res)
+	if err != nil {
+		return fmt.Errorf("encode: %w", err)
+	}
+
+	_, err = io.WriteString(w, "\n\n")
+	if err != nil {
+		return fmt.Errorf("writeString: %w", err)
+	}
+
+	flusher.Flush()
+
+	return nil
+}
+
 func systemHandler(logger *slog.Logger) http.HandlerFunc {
+	var lastResponse *Response
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -154,6 +177,15 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.WriteHeader(http.StatusOK)
 
+		if lastResponse != nil { // TODO: check TTL
+			err := sendEvent(w, encoder, flusher, lastResponse)
+			if err != nil {
+				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
+
+				return
+			}
+		}
+
 		for {
 			select {
 			case <-ctx.Done():
@@ -168,28 +200,14 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 				return
 			}
 
-			_, err = io.WriteString(w, "data: ")
+			err = sendEvent(w, encoder, flusher, res)
 			if err != nil {
-				logger.ErrorContext(ctx, "WriteString", slog.String("error", err.Error()))
+				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
 
 				return
 			}
 
-			err = encoder.Encode(res)
-			if err != nil {
-				logger.ErrorContext(ctx, "Encode", slog.String("error", err.Error()))
-
-				return
-			}
-
-			_, err = io.WriteString(w, "\n\n")
-			if err != nil {
-				logger.ErrorContext(ctx, "WriteString", slog.String("error", err.Error()))
-
-				return
-			}
-
-			flusher.Flush()
+			lastResponse = res
 		}
 	}
 }
