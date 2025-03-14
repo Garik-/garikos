@@ -1,6 +1,7 @@
 package main
 
 import (
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"errors"
@@ -12,10 +13,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/shirou/gopsutil/v4/cpu"
+	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/sensors"
 	"golang.org/x/sync/errgroup"
@@ -81,7 +84,55 @@ func parseInterval(value string) time.Duration {
 	return defaultInterval
 }
 
-func systemStatusHandler(logger *slog.Logger) http.HandlerFunc {
+func newJSONEncoder(w http.ResponseWriter, r *http.Request) (*json.Encoder, func() error) {
+	if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+		w.Header().Set("Content-Encoding", "gzip")
+		gw := gzip.NewWriter(w)
+
+		return json.NewEncoder(gw), func() error {
+			return gw.Close()
+		}
+	}
+
+	return json.NewEncoder(w), func() error {
+		return nil
+	}
+}
+
+func diskHandler(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+		usage, err := disk.UsageWithContext(ctx, "/")
+
+		if err != nil {
+			logger.ErrorContext(ctx, "UsageWithContext", slog.String("error", err.Error()))
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		encoder, encoderClose := newJSONEncoder(w, r)
+		defer func() {
+			if err := encoderClose(); err != nil {
+				logger.ErrorContext(ctx, "encoderClose", slog.String("error", err.Error()))
+			}
+		}()
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Cache-Control", "public, max-age=60")
+
+		w.WriteHeader(http.StatusOK)
+
+		err = encoder.Encode(usage)
+		if err != nil {
+			logger.ErrorContext(ctx, "Encode", slog.String("error", err.Error()))
+
+			return
+		}
+	}
+}
+
+func systemHandler(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
@@ -94,15 +145,14 @@ func systemStatusHandler(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		encoder := json.NewEncoder(w)
-
 		interval := parseInterval(r.URL.Query().Get("interval"))
 		logger.DebugContext(ctx, "cpu handler", slog.Duration("interval", interval))
-
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
+		w.WriteHeader(http.StatusOK)
 
 		for {
 			select {
@@ -150,7 +200,8 @@ func initServer(ctx context.Context, logger *slog.Logger, addr string) *http.Ser
 	srv := newServer(ctx, addr)
 	srv.Handler = mux
 
-	mux.Handle("/system-status", systemStatusHandler(logger))
+	mux.Handle("/system", systemHandler(logger))
+	mux.Handle("/disk", diskHandler(logger))
 
 	return srv
 }

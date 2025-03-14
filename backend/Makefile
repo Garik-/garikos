@@ -46,13 +46,12 @@ build: tidy
 
 .PHONY: install
 install: build
-	scp $(BINDIR)/$(APP)-arm64 xakep@raspberrypi.local:/home/xakep/bin/garikos
-	scp garikos.service xakep@raspberrypi.local:/home/xakep/bin/
+	scp $(BINDIR)/$(APP)-arm64 xakep@raspberrypi.local:/home/xakep/bin/$(APP)
+	scp $(APP).service xakep@raspberrypi.local:/home/xakep/bin/
 
-
-# deploy: build
-# 	ssh xakep@raspberrypi.local "sudo systemctl stop temperature-sensor"
-# 	scp bin/temperature-sensor-arm64 xakep@raspberrypi.local:/home/xakep/bin/temperature-sensor
-# 	scp temperature-sensor.service xakep@raspberrypi.local:/home/xakep/bin/
-# 	ssh xakep@raspberrypi.local "sudo systemctl start temperature-sensor"
-# 	ssh xakep@raspberrypi.local "sudo systemctl status temperature-sensor"
+.PHONY: deploy
+deploy: build
+	ssh xakep@raspberrypi.local "sudo systemctl stop $(APP)"
+	scp $(BINDIR)/$(APP)-arm64 xakep@raspberrypi.local:/home/xakep/bin/$(APP)
+	ssh xakep@raspberrypi.local "sudo systemctl start $(APP)"
+	ssh xakep@raspberrypi.local "sudo systemctl status $(APP)"
