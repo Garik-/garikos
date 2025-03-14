@@ -41,7 +41,14 @@ build: tidy
 		echo "Building for $$arch..."; \
 		CGO_ENABLED=0 GOOS=linux GOARCH=$$arch go build $(GO_LDFLAGS) -o $(BINDIR)/$(APP)-$$arch .; \
 	done
-	@ls -lh bin
+	@ls -lh $(BINDIR)
+
+
+.PHONY: install
+install: build
+	scp $(BINDIR)/$(APP)-arm64 xakep@raspberrypi.local:/home/xakep/bin/garikos
+	scp garikos.service xakep@raspberrypi.local:/home/xakep/bin/
+
 
 # deploy: build
 # 	ssh xakep@raspberrypi.local "sudo systemctl stop temperature-sensor"

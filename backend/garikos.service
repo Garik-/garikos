@@ -1,0 +1,28 @@
+[Unit]
+Description=garikos - home server page
+
+After=network-online.target nss-lookup.target
+Wants=network-online.target
+
+[Service]
+LogNamespace=garikos
+Type=simple
+User=xakep
+Group=xakep
+ExecStart=/home/xakep/bin/garikos
+
+# restart if it crashes
+Restart=on-failure
+RestartSec=30
+
+CPUSchedulingPolicy=batch
+Nice=0
+
+# Sandboxing
+ProtectSystem=full
+ProtectHome=read-only
+ProtectControlGroups=on
+BindReadOnlyPaths=-/proc -/sys -/dev
+
+[Install]
+WantedBy=multi-user.target
