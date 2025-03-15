@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -21,6 +22,7 @@ import (
 	"github.com/shirou/gopsutil/v4/cpu"
 	"github.com/shirou/gopsutil/v4/disk"
 	"github.com/shirou/gopsutil/v4/mem"
+	"github.com/shirou/gopsutil/v4/process"
 	"github.com/shirou/gopsutil/v4/sensors"
 	"golang.org/x/sync/errgroup"
 )
@@ -75,14 +77,14 @@ func newResponse(ctx context.Context, interval time.Duration) (*Response, error)
 	return res, nil
 }
 
-func parseInterval(value string) time.Duration {
+func parseInterval(value string, defaultValue time.Duration) time.Duration {
 	if value != "" {
 		if parsed, err := time.ParseDuration(value); err == nil {
 			return parsed
 		}
 	}
 
-	return defaultInterval
+	return defaultValue
 }
 
 func newJSONEncoder(w http.ResponseWriter, r *http.Request) (*json.Encoder, func() error) {
@@ -133,13 +135,13 @@ func diskHandler(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
-func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, res *Response) error {
+func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, v any) error {
 	_, err := io.WriteString(w, "data: ")
 	if err != nil {
 		return fmt.Errorf("writeString: %w", err)
 	}
 
-	err = encoder.Encode(res)
+	err = encoder.Encode(v)
 	if err != nil {
 		return fmt.Errorf("encode: %w", err)
 	}
@@ -180,7 +182,7 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		}
 
 		encoder := json.NewEncoder(w)
-		interval := parseInterval(r.URL.Query().Get("interval"))
+		interval := parseInterval(r.URL.Query().Get("interval"), defaultInterval)
 		logger.DebugContext(ctx, "cpu handler", slog.Duration("interval", interval))
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
@@ -224,6 +226,114 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 	}
 }
 
+type ProcResponse struct {
+	Name          string  `json:"name"`
+	CPUPercent    float64 `json:"cpuPercent"`
+	MemoryPercent float32 `json:"memoryPercent"`
+	Pid           int32   `json:"pid"`
+}
+
+func newProcResponse(ctx context.Context, p *process.Process, filters []string) (*ProcResponse, error) {
+	var err error
+
+	res := &ProcResponse{
+		Pid: p.Pid,
+	}
+
+	res.Name, err = p.NameWithContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("NameWithContext: %w", err)
+	}
+
+	if filters != nil && !slices.Contains(filters, res.Name) {
+		return nil, nil //nolint:nilnil
+	}
+
+	res.CPUPercent, err = p.CPUPercentWithContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("CPUPercentWithContext: %w", err)
+	}
+
+	res.MemoryPercent, err = p.MemoryPercentWithContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("MemoryPercentWithContext: %w", err)
+	}
+
+	return res, nil
+}
+
+func procHandler(logger *slog.Logger) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			logger.ErrorContext(ctx, "streaming unsupported")
+			http.Error(w, "streaming unsupported", http.StatusInternalServerError)
+
+			return
+		}
+
+		encoder := json.NewEncoder(w)
+		query := r.URL.Query()
+		interval := parseInterval(query.Get("interval"), defaultInterval)
+
+		var filters []string
+		if query.Has("name") {
+			filters = query["name"]
+		}
+
+		logger.DebugContext(ctx, "proc handler", "interval", interval, "filters", filters)
+
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+		w.WriteHeader(http.StatusOK)
+
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+
+		for {
+			processes, err := process.ProcessesWithContext(ctx)
+			if err != nil {
+				logger.ErrorContext(ctx, "ProcessesWithContext", slog.String("error", err.Error()))
+
+				return
+			}
+
+			response := make([]*ProcResponse, 0, len(processes))
+
+			for _, p := range processes {
+				res, err := newProcResponse(ctx, p, filters)
+				if err != nil {
+					logger.WarnContext(ctx, "newProcResponse", slog.String("error", err.Error()))
+
+					continue
+				}
+
+				if res != nil {
+					response = append(response, res)
+				}
+			}
+
+			err = sendEvent(w, encoder, flusher, response)
+			if err != nil {
+				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
+
+				return
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+			}
+		}
+	}
+}
+
 func initServer(ctx context.Context, logger *slog.Logger, addr string) *http.Server {
 	mux := http.NewServeMux()
 
@@ -232,6 +342,7 @@ func initServer(ctx context.Context, logger *slog.Logger, addr string) *http.Ser
 
 	mux.Handle("/system", systemHandler(logger))
 	mux.Handle("/disk", diskHandler(logger))
+	mux.Handle("/proc", procHandler(logger))
 
 	return srv
 }
