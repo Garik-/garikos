@@ -4,6 +4,7 @@ import SystemStatusCard from '@/components/SystemStatusCard.vue'
 import ProcessesCard from './components/ProcessesCard.vue'
 import AppsPanel from './components/AppsPanel.vue'
 import StorageCard from './components/StorageCard.vue'
+import ClockCard from './components/ClockCard.vue'
 </script>
 
 <template>
@@ -15,6 +16,9 @@ import StorageCard from './components/StorageCard.vue'
             <div class="col-sm-6 col-lg-4">
               <div class="page-body">
                 <div class="row row-deck row-cards">
+                  <div class="col-12">
+                    <ClockCard />
+                  </div>
                   <div class="col-12">
                     <SystemStatusCard />
                   </div>
