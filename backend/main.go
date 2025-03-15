@@ -33,7 +33,7 @@ var (
 const (
 	defaultHTTPAddr   = ":8002"
 	readHeaderTimeout = 2 * time.Second
-	defaultInterval   = 5 * time.Second // Значение по умолчанию
+	defaultInterval   = 5 * time.Second
 )
 
 func newServer(ctx context.Context, addr string) *http.Server {
@@ -154,11 +154,22 @@ func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, res *Re
 	return nil
 }
 
+func errorLogger(ctx context.Context, logger *slog.Logger) func(msg string, err error) {
+	return func(msg string, err error) {
+		if errors.Is(err, context.Canceled) {
+			return
+		}
+
+		logger.ErrorContext(ctx, msg, slog.String("error", err.Error()))
+	}
+}
+
 func systemHandler(logger *slog.Logger) http.HandlerFunc {
-	var lastResponse atomic.Pointer[Response]
+	var lastResponse atomic.Pointer[Response] // because http.HandlerFunc is called in goroutine
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+		log := errorLogger(ctx, logger)
 
 		flusher, ok := w.(http.Flusher)
 		if !ok {
@@ -181,7 +192,7 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		if res := lastResponse.Load(); res != nil { // TODO: check TTL
 			err := sendEvent(w, encoder, flusher, res)
 			if err != nil {
-				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
+				log("sendEvent", err)
 
 				return
 			}
@@ -196,14 +207,14 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 
 			res, err := newResponse(ctx, interval)
 			if err != nil {
-				logger.ErrorContext(ctx, "newResponse", slog.String("error", err.Error()))
+				log("newResponse", err)
 
 				return
 			}
 
 			err = sendEvent(w, encoder, flusher, res)
 			if err != nil {
-				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
+				log("sendEvent", err)
 
 				return
 			}
