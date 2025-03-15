@@ -227,10 +227,11 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 }
 
 type ProcResponse struct {
-	Name          string  `json:"name"`
-	CPUPercent    float64 `json:"cpuPercent"`
-	MemoryPercent float32 `json:"memoryPercent"`
-	Pid           int32   `json:"pid"`
+	Name          string                  `json:"name"`
+	CPUPercent    float64                 `json:"cpuPercent"`
+	MemoryPercent float32                 `json:"memPercent"`
+	MemoryInfo    *process.MemoryInfoStat `json:"mem"`
+	Pid           int32                   `json:"pid"`
 }
 
 func newProcResponse(ctx context.Context, p *process.Process, filters []string) (*ProcResponse, error) {
@@ -252,6 +253,11 @@ func newProcResponse(ctx context.Context, p *process.Process, filters []string) 
 	res.CPUPercent, err = p.CPUPercentWithContext(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("CPUPercentWithContext: %w", err)
+	}
+
+	res.MemoryInfo, err = p.MemoryInfoWithContext(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("MemoryInfoWithContext: %w", err)
 	}
 
 	res.MemoryPercent, err = p.MemoryPercentWithContext(ctx)

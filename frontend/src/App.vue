@@ -26,7 +26,9 @@ import ClockCard from './components/ClockCard.vue'
                     <StorageCard />
                   </div>
                   <div class="col-12">
-                    <ProcessesCard />
+                    <ProcessesCard
+                      :filters="['istatus', 'temperature-sensor', 'garikos', 'AdGuardHome']"
+                    />
                   </div>
                 </div>
               </div>

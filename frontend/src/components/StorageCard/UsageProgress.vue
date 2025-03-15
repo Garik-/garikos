@@ -30,9 +30,7 @@ const usedPercent = computed(() => 'width: ' + props.usedPercent.toFixed(2) + '%
       <div class="col-auto d-flex align-items-center ps-2">
         <span class="legend me-2"></span>
         <span>Свободно</span>
-        <span class="d-none d-md-inline d-lg-none d-xxl-inline ms-2 text-secondary">{{
-          free
-        }}</span>
+        <span class="ms-2 text-secondary">{{ free }}</span>
       </div>
     </div>
   </template>

@@ -2,6 +2,8 @@
 
 My home server page
 
+![screenshot](screenshot.png)
+
 ## Install
 
 ### Backend

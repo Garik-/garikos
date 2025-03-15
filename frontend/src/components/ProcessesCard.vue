@@ -1,3 +1,64 @@
+<script setup lang="ts">
+import { ref, onMounted, onUnmounted } from 'vue'
+import type { Ref } from 'vue'
+import { createSSEConnection } from '@/services/sseService'
+import { PROC_SSE_URL } from '@/config/constants'
+import { formatter, formatBytes } from '@/utils/formatter'
+
+const props = defineProps<{
+  filters?: string[]
+}>()
+
+type Item = {
+  pid: number
+  name: string
+  cpuPercent: string
+  memRSS: string
+}
+
+type Response = {
+  pid: number
+  name: string
+  cpuPercent: number
+  mem: {
+    rss: number
+  }
+}
+
+const items: Ref<Item[]> = ref([])
+
+function getURL(filters?: string[]) {
+  if (!filters) return PROC_SSE_URL
+
+  const url = new URL(PROC_SSE_URL)
+
+  const searchParams = new URLSearchParams()
+  filters.forEach((value) => {
+    searchParams.append('name', value)
+  })
+  url.search = searchParams.toString()
+
+  return url.toString()
+}
+
+let eventSource: EventSource | null = null
+onMounted(() => {
+  eventSource = createSSEConnection(getURL(props.filters), (processes) => {
+    items.value = (processes as Response[]).map((p): Item => {
+      return {
+        pid: p.pid,
+        name: p.name,
+        cpuPercent: formatter.format(p.cpuPercent) + '%',
+        memRSS: formatBytes(p.mem.rss),
+      }
+    })
+  })
+})
+
+onUnmounted(() => {
+  eventSource?.close()
+})
+</script>
 <template>
   <div class="card">
     <div class="card-header">
@@ -14,11 +75,11 @@
           </tr>
         </thead>
         <tbody>
-          <tr>
-            <td>77157</td>
-            <td>iterm2</td>
-            <td>4,8%</td>
-            <td>254 Mбайт</td>
+          <tr v-for="item in items" :key="item.pid">
+            <td>{{ item.pid }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.cpuPercent }}</td>
+            <td>{{ item.memRSS }}</td>
           </tr>
         </tbody>
       </table>
