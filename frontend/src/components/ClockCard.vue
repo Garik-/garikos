@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
+import timeImage from '@/assets/time.png'
 const time = ref('')
 const date = ref('')
 
@@ -14,10 +15,15 @@ onMounted(updateTime)
 onUnmounted(() => clearInterval(interval))
 </script>
 <template>
-  <div class="card">
-    <div class="card-header border-0 pb-0">
-      <h3 class="card-title h1 mb-2" style="font-size: 1.85rem">{{ time }}</h3>
+  <div class="card d-flex flex-column">
+    <div class="row row-0 flex-fill align-items-center">
+      <div class="col-md-3 p-3">
+        <img :src="timeImage" class="w-100 h-100 object-cover" alt="Card side image" />
+      </div>
+      <div class="col">
+        <h3 class="card-title h1 mb-1" style="font-size: 1.85rem">{{ time }}</h3>
+        <div>{{ date }}</div>
+      </div>
     </div>
-    <div class="card-body pt-0">{{ date }}</div>
   </div>
 </template>
