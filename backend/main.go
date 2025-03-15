@@ -155,8 +155,7 @@ func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, res *Re
 }
 
 func systemHandler(logger *slog.Logger) http.HandlerFunc {
-	var lastResponse atomic.Value
-	lastResponse.Store(nil)
+	var lastResponse atomic.Pointer[Response]
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -179,7 +178,7 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.WriteHeader(http.StatusOK)
 
-		if res := lastResponse.Load().(*Response); res != nil { // TODO: check TTL
+		if res := lastResponse.Load(); res != nil { // TODO: check TTL
 			err := sendEvent(w, encoder, flusher, res)
 			if err != nil {
 				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
