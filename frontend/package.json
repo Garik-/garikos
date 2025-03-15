@@ -10,6 +10,9 @@
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
+    "lint:ci": "eslint .",
+    "format:ci": "prettier --check src/",
+    "ci": "run-p type-check lint:ci format:ci",
     "format": "prettier --write src/",
     "predeploy": "npm run build",
     "deploy": "rsync -avz --delete dist/ xakep@raspberrypi.local:/usr/share/nginx/www"

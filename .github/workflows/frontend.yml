@@ -1,0 +1,31 @@
+name: Frontend
+
+on:
+  push:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - ".github/workflows/frontend.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: ./frontend
+
+jobs:
+  ci_job:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 23.9.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23.9.0
+      - run: npm ci
+      - run: npm run ci
