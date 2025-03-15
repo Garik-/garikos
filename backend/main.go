@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/signal"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -154,7 +155,8 @@ func sendEvent(w io.Writer, encoder *json.Encoder, flusher http.Flusher, res *Re
 }
 
 func systemHandler(logger *slog.Logger) http.HandlerFunc {
-	var lastResponse *Response
+	var lastResponse atomic.Value
+	lastResponse.Store(nil)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -177,8 +179,8 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.WriteHeader(http.StatusOK)
 
-		if lastResponse != nil { // TODO: check TTL
-			err := sendEvent(w, encoder, flusher, lastResponse)
+		if res := lastResponse.Load().(*Response); res != nil { // TODO: check TTL
+			err := sendEvent(w, encoder, flusher, res)
 			if err != nil {
 				logger.ErrorContext(ctx, "sendEvent", slog.String("error", err.Error()))
 
@@ -207,7 +209,7 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 				return
 			}
 
-			lastResponse = res
+			lastResponse.Store(res)
 		}
 	}
 }
