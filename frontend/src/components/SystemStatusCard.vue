@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef, ref } from 'vue'
+import { onMounted, onUnmounted, useTemplateRef, ref, nextTick } from 'vue'
 import ApexCharts from 'apexcharts'
 import { formatBytes } from '@/utils/formatter'
 import { formatter } from '@/utils/formatter'
@@ -7,6 +7,20 @@ import { createSSEConnection } from '@/services/sseService'
 import { SYSTEM_SSE_URL } from '@/config/constants'
 
 const cpuTemperature = ref('')
+const cpuTemperatureClass = ref('')
+const cpuTooltipText = ref('')
+const tooltipElement = useTemplateRef('cpu-temperature')
+
+let tooltipInstance: bootstrap.Tooltip | null = null
+
+const initTooltip = () => {
+  tooltipInstance?.dispose()
+
+  if (tooltipElement.value) {
+    tooltipInstance = new window.bootstrap.Tooltip(tooltipElement.value)
+  }
+}
+
 const memBytes = ref('')
 
 let cpuChart: ApexCharts | null = null
@@ -14,6 +28,22 @@ const cpuEl = useTemplateRef('cpu-activity')
 
 let memChart: ApexCharts | null = null
 const memEl = useTemplateRef('mem-activity')
+
+function getTemperatureColor(temp: number) {
+  if (temp < 50) return 'text-blue'
+  if (temp < 65) return 'text-green'
+  if (temp < 80) return 'text-orange'
+
+  return 'text-red'
+}
+
+const getTooltipText = (temp: number) => {
+  if (temp < 50) return 'Нормальный режим'
+  if (temp < 65) return 'Рабочая температура'
+  if (temp < 80) return 'Высокая нагрузка'
+
+  return 'Очень горячая! Возможен троттлинг'
+}
 
 const chartOptions = {
   chart: {
@@ -100,9 +130,15 @@ onMounted(() => {
   eventSource = createSSEConnection(SYSTEM_SSE_URL, (d) => {
     console.log(d)
 
-    cpuTemperature.value = formatter.format((d as Data).sensors[0].temperature)
-    cpuChart?.updateSeries((d as Data).cpu.map((value) => Math.round(value * 100) / 100))
+    const { temperature } = (d as Data).sensors[0]
 
+    cpuTemperature.value = formatter.format(temperature)
+    cpuTemperatureClass.value = getTemperatureColor(temperature)
+    cpuTooltipText.value = getTooltipText(temperature)
+
+    nextTick(initTooltip)
+
+    cpuChart?.updateSeries((d as Data).cpu.map((value) => Math.round(value * 100) / 100))
     memChart?.updateSeries([Math.round((d as Data).mem.usedPercent * 100) / 100])
     memBytes.value = formatBytes((d as Data).mem.used)
   })
@@ -121,7 +157,15 @@ onUnmounted(() => {
       <div class="row">
         <div class="col-6">
           <div ref="cpu-activity"></div>
-          <h4 class="card-text text-center">{{ cpuTemperature }}°</h4>
+          <h4
+            ref="cpu-temperature"
+            :class="['card-text', 'text-center', cpuTemperatureClass]"
+            data-bs-toggle="tooltip"
+            data-bs-placement="top"
+            :title="cpuTooltipText"
+          >
+            {{ cpuTemperature }}°
+          </h4>
         </div>
         <div class="col-6">
           <div ref="mem-activity"></div>
