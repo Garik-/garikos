@@ -3,7 +3,7 @@ import BalconySensors from '@/components/BalconySensors/BalconySensors.vue'
 import SystemStatusCard from '@/components/SystemStatusCard.vue'
 import ProcessesCard from './components/ProcessesCard.vue'
 import AppsPanel from './components/AppsPanel.vue'
-import StorageCard from './components/StorageCard.vue'
+import StorageCard from './components/StorageCard/StorageCard.vue'
 import ClockCard from './components/ClockCard.vue'
 </script>
 
