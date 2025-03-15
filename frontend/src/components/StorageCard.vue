@@ -21,7 +21,7 @@
           aria-label="System"
         ></div>
         <div
-          class="progress-bar bg-success"
+          class="progress-bar bg-success bg-test"
           role="progressbar"
           style="width: 9%"
           aria-label="Shared"
