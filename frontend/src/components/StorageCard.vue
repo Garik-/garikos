@@ -1,17 +1,3 @@
-<script setup lang="ts">
-import { computed } from 'vue'
-
-const props = {
-  value: 80,
-}
-const label = '6,854 Мбайт'
-
-const objectOfAttrs = computed(() => ({
-  style: 'width:' + props.value.toFixed(2) + '%',
-  'aria-valuenow': +props.value.toFixed(2),
-  'aria-label': label,
-}))
-</script>
 <template>
   <div class="card">
     <div class="card-header border-0 pb-0">
