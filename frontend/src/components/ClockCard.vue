@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue'
-import timeImage from '@/assets/time.png'
+
+import GopherMaskot from './GopherMaskot.vue'
 const time = ref('')
 const date = ref('')
 
@@ -17,10 +18,10 @@ onUnmounted(() => clearInterval(interval))
 <template>
   <div class="card d-flex flex-column">
     <div class="row row-0 flex-fill align-items-center">
-      <div class="col-auto p-3" style="width: 30%">
-        <img :src="timeImage" class="img-fluid" alt="Cat time" />
+      <div class="col-auto" style="width: 100px">
+        <GopherMaskot />
       </div>
-      <div class="col">
+      <div class="col p-3">
         <h3 class="card-title h1 mb-1" style="font-size: 1.85rem">{{ time }}</h3>
         <div>{{ date }}</div>
       </div>
