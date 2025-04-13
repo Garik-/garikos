@@ -2,6 +2,8 @@
 import TemperatureCard from './TemperatureCard.vue'
 import HumidityCard from './HumidityCard.vue'
 import PressureCard from './PressureCard.vue'
+import VoltageCard from './VoltageCard.vue'
+
 import { BALCONY_SSE_URL } from '@/config/constants'
 import { dateToLocaleString } from '@/utils/formatter'
 
@@ -17,6 +19,7 @@ type Data = {
     humidity: number
     pressure: number
     timestamp: string
+    voltage: number
   }
   chart: {
     temperature: SeriesData
@@ -25,7 +28,13 @@ type Data = {
 }
 
 const data: Ref<Data> = ref({
-  current: { temperature: 0, humidity: 0, pressure: 0, timestamp: '0001-01-01T00:00:00Z' },
+  current: {
+    temperature: 0,
+    humidity: 0,
+    pressure: 0,
+    timestamp: '0001-01-01T00:00:00Z',
+    voltage: 0,
+  },
   chart: { temperature: [], pressure: [] },
 })
 
@@ -62,14 +71,17 @@ onUnmounted(() => {
     <div class="page-body">
       <div class="container-xl">
         <div class="row row-deck row-cards">
-          <div class="col-sm-6 col-lg-4">
+          <div class="col-sm-6 col-lg-3">
             <TemperatureCard :value="data.current.temperature" :series="data.chart.temperature" />
           </div>
-          <div class="col-sm-6 col-lg-4">
+          <div class="col-sm-6 col-lg-3">
             <HumidityCard :value="data.current.humidity" />
           </div>
-          <div class="col-sm-6 col-lg-4">
+          <div class="col-sm-6 col-lg-3">
             <PressureCard :value="data.current.pressure" :series="data.chart.pressure" />
+          </div>
+          <div class="col-sm-6 col-lg-3">
+            <VoltageCard :value="data.current.voltage" />
           </div>
         </div>
       </div>

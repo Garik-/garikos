@@ -102,7 +102,7 @@ watch(
       <div class="subheader">Давление</div>
       <div class="d-flex align-items-baseline">
         <div class="h1 mb-0 me-2">{{ formattedValue }}</div>
-        <div class="me-auto">мм рт. ст.</div>
+        <div class="me-auto">мм рт.ст.</div>
       </div>
       <div ref="chart-pressure" class="chart-sm"></div>
     </div>
