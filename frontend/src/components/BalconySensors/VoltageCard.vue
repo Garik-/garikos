@@ -8,11 +8,23 @@ const props = defineProps<{
 }>()
 
 const getBatteryPercent = (voltage_mV: number) => {
-  if (voltage_mV >= 4200) return 100
-  if (voltage_mV <= 2500) return 0
+  if (voltage_mV >= MAX_CHARGE_VOLTAGE) return 100
+  if (voltage_mV <= MIN_CHARGE_VOLTAGE) return 0
 
   // LUT в милливольтах (отсортирован по убыванию!)
-  const lut_mV = [4200, 4100, 4000, 3900, 3800, 3700, 3600, 3500, 3300, 3000, 2500]
+  const lut_mV = [
+    MAX_CHARGE_VOLTAGE,
+    4100,
+    4000,
+    3900,
+    3800,
+    3700,
+    3600,
+    3500,
+    3300,
+    3000,
+    MIN_CHARGE_VOLTAGE,
+  ]
   const lut_pct = [100, 95, 85, 75, 60, 40, 20, 10, 5, 1, 0]
 
   // Бинарный поиск
