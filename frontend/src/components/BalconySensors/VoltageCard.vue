@@ -1,15 +1,39 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatter } from '@/utils/formatter'
-import { FULL_CHARGE_VOLTAGE } from '@/config/constants'
+import { MIN_CHARGE_VOLTAGE, MAX_CHARGE_VOLTAGE } from '@/config/constants'
 
 const props = defineProps<{
   value: number
 }>()
 
-const percent = computed(() => {
-  return (props.value / FULL_CHARGE_VOLTAGE) * 100
-})
+const getBatteryPercent = (voltage_mV: number) => {
+  if (voltage_mV >= 4200) return 100
+  if (voltage_mV <= 2500) return 0
+
+  // LUT в милливольтах (отсортирован по убыванию!)
+  const lut_mV = [4200, 4100, 4000, 3900, 3800, 3700, 3600, 3500, 3300, 3000, 2500]
+  const lut_pct = [100, 95, 85, 75, 60, 40, 20, 10, 5, 1, 0]
+
+  // Бинарный поиск
+  let low = 0
+  let high = lut_mV.length - 1
+  while (low <= high) {
+    const mid = (low + high) >>> 1
+    const midVal = lut_mV[mid]
+    if (midVal === voltage_mV) return lut_pct[mid]
+    if (midVal < voltage_mV) high = mid - 1
+    else low = mid + 1
+  }
+
+  // Интерполяция между high и low (теперь high < low)
+  const i = high
+  const rangeV = lut_mV[i] - lut_mV[i + 1]
+  const rangeP = lut_pct[i] - lut_pct[i + 1]
+  return lut_pct[i + 1] + Math.round(((voltage_mV - lut_mV[i + 1]) * rangeP) / rangeV)
+}
+
+const percent = computed(() => getBatteryPercent(props.value))
 
 const label = computed(() => {
   return formatter.format(props.value)
