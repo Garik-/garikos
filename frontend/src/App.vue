@@ -23,7 +23,10 @@ import ClockCard from './components/ClockCard.vue'
                     <SystemStatusCard />
                   </div>
                   <div class="col-12">
-                    <StorageCard />
+                    <StorageCard path="/" />
+                  </div>
+                  <div class="col-12">
+                    <StorageCard path="/mnt/music" />
                   </div>
                   <div class="col-12">
                     <ProcessesCard

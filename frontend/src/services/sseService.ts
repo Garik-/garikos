@@ -2,8 +2,12 @@ export function createSSEConnection(url: string, onMessage: (data: unknown) => v
   const eventSource = new EventSource(url)
 
   eventSource.onmessage = (event) => {
-    const data = JSON.parse(event.data)
-    onMessage(data)
+    try {
+      const data = JSON.parse(event.data)
+      onMessage(data)
+    } catch (err) {
+      console.error('Failed to parse SSE message:', err, event.data)
+    }
   }
 
   eventSource.onerror = (error) => {

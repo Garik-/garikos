@@ -2,6 +2,7 @@
 import { computed, onMounted, watch, useTemplateRef } from 'vue'
 import { formatter } from '@/utils/formatter'
 import type { SeriesData } from '@/utils/charts'
+import { getColor } from '@/utils/color'
 import ApexCharts from 'apexcharts'
 import { ru } from '@/utils/charts'
 
@@ -78,7 +79,7 @@ onMounted(() => {
       },
     },
 
-    colors: [tabler.getColor('primary')],
+    colors: [getColor('primary')],
     legend: {
       show: false,
     },

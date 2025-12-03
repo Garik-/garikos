@@ -1,16 +1,18 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef, ref, nextTick } from 'vue'
+import { onMounted, onUnmounted, useTemplateRef, ref } from 'vue'
 import ApexCharts from 'apexcharts'
 import { formatBytes } from '@/utils/formatter'
 import { formatter } from '@/utils/formatter'
+import { getColor } from '@/utils/color'
 import { createSSEConnection } from '@/services/sseService'
 import { SYSTEM_SSE_URL } from '@/config/constants'
 
 const cpuTemperature = ref('')
 const cpuTemperatureClass = ref('')
 const cpuTooltipText = ref('')
-const tooltipElement = useTemplateRef('cpu-temperature')
 
+/*
+const tooltipElement = useTemplateRef('cpu-temperature')
 let tooltipInstance: bootstrap.Tooltip | null = null
 
 const initTooltip = () => {
@@ -20,6 +22,7 @@ const initTooltip = () => {
     tooltipInstance = new window.bootstrap.Tooltip(tooltipElement.value)
   }
 }
+*/
 
 const memBytes = ref('')
 
@@ -79,7 +82,7 @@ const chartOptions = {
       dataLabels: {
         show: true,
         name: {
-          color: tabler.getColor('secondary'),
+          color: getColor('secondary'),
         },
         value: {
           offsetY: 28,
@@ -89,7 +92,7 @@ const chartOptions = {
       },
     },
   },
-  colors: [tabler.getColor('primary')],
+  colors: [getColor('primary')],
 }
 
 let eventSource: EventSource | null = null
@@ -136,7 +139,7 @@ onMounted(() => {
     cpuTemperatureClass.value = getTemperatureColor(temperature)
     cpuTooltipText.value = getTooltipText(temperature)
 
-    nextTick(initTooltip)
+    // nextTick(initTooltip)
 
     cpuChart?.updateSeries((d as Data).cpu.map((value) => Math.round(value * 100) / 100))
     memChart?.updateSeries([Math.round((d as Data).mem.usedPercent * 100) / 100])

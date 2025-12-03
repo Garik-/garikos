@@ -29,8 +29,13 @@ const items: Ref<Item[]> = ref([])
 
 function getURL(filters?: string[]) {
   if (!filters) return PROC_SSE_URL
+  let url: URL
 
-  const url = new URL(PROC_SSE_URL)
+  try {
+    url = new URL(PROC_SSE_URL)
+  } catch {
+    url = new URL(PROC_SSE_URL, window.location.origin)
+  }
 
   const searchParams = new URLSearchParams()
   filters.forEach((value) => {
