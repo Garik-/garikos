@@ -1,15 +1,25 @@
 <script setup lang="ts">
 import IconAdguard from './icons/IconAdguard.vue'
-import IconGrafana from './icons/IconGrafana.vue'
-import IconVictoriaMetrics from './icons/IconVictoriaMetrics.vue'
+import IconNavidrome from './icons/IconNavidrome.vue'
+import IconTransmission from './icons/IconTransmission.vue'
 
 const items = [
+  {
+    title: 'Navidrome',
+    url: 'https://music.raspberrypi.local/',
+    icon: IconNavidrome,
+  },
+  {
+    title: 'Transmission',
+    url: 'http://raspberrypi.local:9091/',
+    icon: IconTransmission,
+  },
   {
     title: 'AdGuard Home',
     url: 'http://raspberrypi.local:18888/',
     icon: IconAdguard,
   },
-  {
+  /*{
     title: 'Grafana',
     url: 'http://raspberrypi.local:3000/',
     icon: IconGrafana,
@@ -18,7 +28,7 @@ const items = [
     title: 'Victoria Metrics',
     url: 'http://raspberrypi.local:8428/vmui/',
     icon: IconVictoriaMetrics,
-  },
+  },*/
 ]
 </script>
 <template>
@@ -35,7 +45,13 @@ const items = [
           <div v-for="(item, index) in items" :key="index" class="col-sm-3 col-lg-3">
             <div class="card">
               <div class="card-body d-flex align-items-center">
-                <a :href="item.url" :title="item.title" class="app-link">
+                <a
+                  :href="item.url"
+                  target="_blank"
+                  rel="nofollow noopener"
+                  :title="item.title"
+                  class="app-link"
+                >
                   <component :is="item.icon" />
                 </a>
               </div>
@@ -52,6 +68,7 @@ const items = [
   display: block;
   width: 100%;
 }
+
 .app-link svg {
   width: 100%;
   height: auto;

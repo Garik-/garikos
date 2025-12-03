@@ -4,7 +4,7 @@ import HumidityCard from './HumidityCard.vue'
 import PressureCard from './PressureCard.vue'
 import VoltageCard from './VoltageCard.vue'
 
-import { BALCONY_SSE_URL } from '@/config/constants'
+import { SENSOR_SSE_URL } from '@/config/constants'
 import { dateToLocaleString } from '@/utils/formatter'
 
 import { onMounted, onUnmounted, ref, computed } from 'vue'
@@ -43,7 +43,7 @@ const currentTime = computed(() => dateToLocaleString(new Date(data.value.curren
 let eventSource: EventSource | null = null
 
 onMounted(() => {
-  eventSource = createSSEConnection(BALCONY_SSE_URL, (d) => {
+  eventSource = createSSEConnection(SENSOR_SSE_URL, (d) => {
     data.value = d as Data
   })
 })

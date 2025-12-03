@@ -58,8 +58,8 @@ func newResponse(ctx context.Context, interval time.Duration) (*Response, error)
 	var err error
 
 	res := &Response{}
-	res.CPU, err = cpu.PercentWithContext(ctx, interval, false)
 
+	res.CPU, err = cpu.PercentWithContext(ctx, interval, false)
 	if err != nil {
 		return nil, fmt.Errorf("PercentWithContext: %w", err)
 	}
@@ -105,22 +105,29 @@ func newJSONEncoder(w http.ResponseWriter, r *http.Request) (*json.Encoder, func
 func diskHandler(logger *slog.Logger) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		usage, err := disk.UsageWithContext(ctx, "/")
 
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
+
+		path := r.URL.Query().Get("path")
+		if path == "" {
+			path = "/"
+		}
+
+		usage, err := disk.UsageWithContext(ctx, path)
 		if err != nil {
-			logger.ErrorContext(ctx, "UsageWithContext", slog.String("error", err.Error()))
+			logger.ErrorContext(ctx, "UsageWithContext", "path", path, "error", err.Error())
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
 		encoder, encoderClose := newJSONEncoder(w, r)
+
 		defer func() {
 			if err := encoderClose(); err != nil {
 				logger.ErrorContext(ctx, "encoderClose", slog.String("error", err.Error()))
 			}
 		}()
 
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Expose-Headers", "Content-Type")
 		w.Header().Set("Content-Type", "application/json")
 		w.Header().Set("Cache-Control", "public, max-age=60")
 
@@ -191,7 +198,7 @@ func systemHandler(logger *slog.Logger) http.HandlerFunc {
 		w.Header().Set("Connection", "keep-alive")
 		w.WriteHeader(http.StatusOK)
 
-		if res := lastResponse.Load(); res != nil { // TODO: check TTL
+		if res := lastResponse.Load(); res != nil { // note: check TTL
 			err := sendEvent(w, encoder, flusher, res)
 			if err != nil {
 				log("sendEvent", err)
@@ -356,12 +363,19 @@ func initServer(ctx context.Context, logger *slog.Logger, addr string) *http.Ser
 func main() {
 	addr := flag.String("addr", defaultHTTPAddr, "HTTP server address")
 	showVersion := flag.Bool("v", false, "Show version information")
+
 	flag.Parse()
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level:       slog.LevelDebug,
+		ReplaceAttr: nil,
+		AddSource:   false,
+	}))
+
+	slog.SetDefault(logger)
 
 	if *showVersion {
 		logger.InfoContext(ctx, Version)

@@ -4,22 +4,30 @@ GIT_HASH ?= $(shell git rev-parse --short HEAD)
 VERSION = $(GIT_BRANCH)-$(GIT_HASH)
 GO_LDFLAGS = -ldflags="-w -s -X 'main.Version=$(VERSION)'"
 
+
 BINDIR = $(CURDIR)/dist
+LINT_VERSION ?= v2.6.2
+LINT_BIN := $(BINDIR)/golangci-lint
+
 APP = garikos
 
 ARCHS = arm64 arm
 
+lint: $(LINT_BIN)
+	$(LINT_BIN) run ./...
+
+fix: $(LINT_BIN)
+	$(LINT_BIN) run --fix ./...
+
+$(LINT_BIN):
+	@echo "Installing golangci-lint $(LINT_VERSION)..."
+	@mkdir -p $(BINDIR)
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | \
+		sh -s -- -b $(BINDIR) $(LINT_VERSION)
+
 .PHONY: tidy
 tidy:
 	@go mod tidy
-
-.PHONY: lint
-lint: tidy
-	@go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5 run ./...
-
-.PHONY: fix
-fix: tidy
-	@go run github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5 run --fix ./...
 
 .PHONY: vuln
 vuln: tidy

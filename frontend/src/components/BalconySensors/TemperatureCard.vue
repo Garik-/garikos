@@ -4,6 +4,7 @@ import { formatter } from '@/utils/formatter'
 import { ru } from '@/utils/charts'
 import ApexCharts from 'apexcharts'
 import type { SeriesData } from '@/utils/charts'
+import { getColor } from '@/utils/color'
 
 const props = defineProps<{
   value: number
@@ -78,7 +79,7 @@ onMounted(() => {
         padding: 4,
       },
     },
-    colors: [tabler.getColor('primary')],
+    colors: [getColor('primary')],
     legend: {
       show: false,
     },
