@@ -2,10 +2,96 @@
 import { computed } from 'vue'
 import { formatter } from '@/utils/formatter'
 import { MIN_CHARGE_VOLTAGE, MAX_CHARGE_VOLTAGE } from '@/config/constants'
+import type { SeriesData } from '@/utils/charts'
 
 const props = defineProps<{
   value: number
+  series: SeriesData
 }>()
+
+function getWindow(date: Date) {
+  const hour = date.getHours();
+
+  if (hour >= 6 && hour < 14) return 'morning';
+  if (hour >= 14 && hour < 19) return 'day';
+  return 'evening'; // 19–6
+}
+
+
+function aggregateByDayAndWindow(seriesData: SeriesData) {
+  const days = new Map();
+
+  for (const [ts, value] of seriesData) {
+    const d = new Date(ts);
+
+    // ключ дня: YYYY-MM-DD (локальное время)
+    const dayKey = d.toISOString().slice(0, 10);
+
+    if (!days.has(dayKey)) {
+      days.set(dayKey, {
+        morning: { sum: 0, count: 0 },
+        day: { sum: 0, count: 0 },
+        evening: { sum: 0, count: 0 },
+      });
+    }
+
+    const window = getWindow(d);
+    const bucket = days.get(dayKey)[window];
+
+    bucket.sum += value;
+    bucket.count++;
+  }
+
+  return days;
+}
+
+function avg(sum: number, count: number) {
+  return count > 0 ? sum / count : null;
+}
+
+function calculateDailyConsumption(seriesData: SeriesData) {
+  const days = aggregateByDayAndWindow(seriesData);
+  const sortedDays = [...days.keys()].sort();
+
+  let totalConsumption = 0;
+  let daysCount = 0;
+
+  for (let i = 0; i < sortedDays.length - 1; i++) {
+    const today = days.get(sortedDays[i]);
+    const nextDay = days.get(sortedDays[i + 1]);
+
+    const morning = avg(today.morning.sum, today.morning.count);
+    const day = avg(today.day.sum, today.day.count);
+    const evening = avg(today.evening.sum, today.evening.count);
+    const nextMorning = avg(nextDay.morning.sum, nextDay.morning.count);
+
+    if (
+      morning === null ||
+      day === null ||
+      evening === null ||
+      nextMorning === null
+    ) {
+      continue;
+    }
+
+    let consumption = 0;
+
+    if (day < morning) consumption += (morning - day);
+    if (evening < day) consumption += (day - evening);
+    if (nextMorning < evening) consumption += (evening - nextMorning);
+
+    totalConsumption += consumption;
+    daysCount++;
+  }
+
+  return daysCount > 0 ? totalConsumption / daysCount : null;
+}
+
+function estimateDaysLeft(currentMv: number, dailyConsumptionMv: number | null, minMv = MIN_CHARGE_VOLTAGE) {
+  if (!dailyConsumptionMv || dailyConsumptionMv <= 0) return null;
+  return (currentMv - minMv) / dailyConsumptionMv;
+}
+
 
 const getBatteryPercent = (voltage_mV: number) => {
   if (voltage_mV >= MAX_CHARGE_VOLTAGE) return 100
@@ -47,6 +133,18 @@ const getBatteryPercent = (voltage_mV: number) => {
 
 const percent = computed(() => getBatteryPercent(props.value))
 
+const dailyConsumptionMv = computed(() => calculateDailyConsumption(props.series));
+
+const averageLabel = computed(() => {
+  if (dailyConsumptionMv.value != null) {
+    return formatter.format(dailyConsumptionMv.value)
+  } else {
+    return "0";
+  }
+})
+
+const daysLeft = computed(() => estimateDaysLeft(props.value, dailyConsumptionMv.value))
+
 const label = computed(() => {
   return formatter.format(props.value)
 })
@@ -58,6 +156,7 @@ const objectOfAttrs = computed(() => ({
 }))
 </script>
 
+<!--
 <template>
   <div class="card">
     <div class="card-body d-flex flex-column">
@@ -66,18 +165,50 @@ const objectOfAttrs = computed(() => ({
         <div class="h1 mb-0 me-2">{{ label }}</div>
         <div class="me-auto">мВ</div>
       </div>
+      <div class="text-secondary">{{ averageLabel }} мВ/сут</div>
+      <div class="text-secondary">~{{ daysLeft }} дней</div>
 
       <div class="progress progress-sm mt-auto">
-        <div
-          v-bind="objectOfAttrs"
-          class="progress-bar bg-primary"
-          role="progressbar"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
+        <div v-bind="objectOfAttrs" class="progress-bar bg-primary" role="progressbar" aria-valuemin="0"
+          aria-valuemax="100">
           <span class="visually-hidden">{{ label }}</span>
         </div>
       </div>
+    </div>
+  </div>
+</template>
+-->
+
+<template>
+  <div class="card">
+    <div class="card-body d-flex flex-column">
+
+      <!-- Заголовок -->
+      <div class="subheader text-muted">Батарея</div>
+
+      <!-- Основное значение -->
+      <div class="d-flex align-items-baseline">
+        <div class="h1 mb-0 me-2">{{ label }}</div>
+        <div class="me-auto">мВ</div>
+      </div>
+
+      <!-- Метрики -->
+      <div class="text-muted small">
+        {{ averageLabel }} мВ / сутки
+      </div>
+
+      <div class="text-muted small">
+        ≈ {{ daysLeft }} дней
+      </div>
+
+      <!-- Прогресс -->
+      <div class="mt-2">
+        <div class="progress progress-sm">
+          <div v-bind="objectOfAttrs" class="progress-bar bg-primary" role="progressbar" aria-valuemin="0"
+            aria-valuemax="100" />
+        </div>
+      </div>
+
     </div>
   </div>
 </template>

@@ -24,6 +24,7 @@ type Data = {
   chart: {
     temperature: SeriesData
     pressure: SeriesData
+    voltage: SeriesData
   }
 }
 
@@ -35,7 +36,7 @@ const data: Ref<Data> = ref({
     timestamp: '0001-01-01T00:00:00Z',
     voltage: 0,
   },
-  chart: { temperature: [], pressure: [] },
+  chart: { temperature: [], pressure: [], voltage: [] },
 })
 
 const currentTime = computed(() => dateToLocaleString(new Date(data.value.current.timestamp)))
@@ -81,7 +82,7 @@ onUnmounted(() => {
             <PressureCard :value="data.current.pressure" :series="data.chart.pressure" />
           </div>
           <div class="col-sm-6 col-lg-3">
-            <VoltageCard :value="data.current.voltage" />
+            <VoltageCard :value="data.current.voltage" :series="data.chart.voltage" />
           </div>
         </div>
       </div>
