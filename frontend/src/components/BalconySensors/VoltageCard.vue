@@ -133,7 +133,7 @@ const percent = computed(() => getBatteryPercent(props.value))
 const dailyConsumptionMv = computed(() => calculateDailyConsumption(props.series))
 
 const averageLabel = computed(() => {
-  if (dailyConsumptionMv.value != null) {
+  if (dailyConsumptionMv.value !== null) {
     return formatter.format(dailyConsumptionMv.value)
   } else {
     return '0'
@@ -141,6 +141,9 @@ const averageLabel = computed(() => {
 })
 
 const daysLeft = computed(() => estimateDaysLeft(props.value, dailyConsumptionMv.value))
+const daysLeftFormatted = computed(() =>
+  daysLeft.value !== null ? formatter.format(daysLeft.value) : '0',
+)
 
 const label = computed(() => {
   return formatter.format(props.value)
@@ -189,9 +192,10 @@ const objectOfAttrs = computed(() => ({
       </div>
 
       <!-- Метрики -->
-      <div class="text-muted small">{{ averageLabel }} мВ / сутки</div>
-
-      <div class="text-muted small">≈ {{ daysLeft }} дней</div>
+      <div v-if="dailyConsumptionMv !== null" class="text-muted small">
+        {{ averageLabel }} мВ / сутки
+      </div>
+      <div v-if="daysLeft !== null" class="text-muted small">≈ {{ daysLeftFormatted }} дней</div>
 
       <!-- Прогресс -->
       <div class="mt-2">

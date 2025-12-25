@@ -19,15 +19,26 @@ body {
 .mobile-carousel {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+
+  @media (prefers-reduced-motion: no-preference) {
+    scroll-behavior: smooth;
+  }
+}
+
+.mobile-carousel::-webkit-scrollbar {
+  display: none;
 }
 
 .carousel-track {
   display: flex;
-  scroll-snap-type: x mandatory;
 }
 
 .carousel-slide {
-  min-width: 100%;
-  scroll-snap-align: start;
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
   padding: 0 0.75rem;
 }
