@@ -10,6 +10,10 @@ on:
       - "frontend/**"
       - ".github/workflows/frontend.yml"
 
+concurrency:
+  group: frontend-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
@@ -27,8 +31,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 23.9.0
-          cache: "npm"
+          cache: "pnpm"
           cache-dependency-path: |
-            frontend/package-lock.json
-      - run: npm ci
-      - run: npm run ci
+            frontend/pnpm-lock.yaml
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run ci

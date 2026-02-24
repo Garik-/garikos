@@ -6,7 +6,8 @@ GO_LDFLAGS = -ldflags="-w -s -X 'main.Version=$(VERSION)'"
 
 
 BINDIR = $(CURDIR)/dist
-LINT_VERSION ?= v2.6.2
+LINT_VERSION ?= v2.9.0
+GOVULNCHECK_VERSION ?= v1.1.4
 LINT_BIN := $(BINDIR)/golangci-lint
 
 APP = garikos
@@ -31,7 +32,7 @@ tidy:
 
 .PHONY: vuln
 vuln: tidy
-	go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+	go run golang.org/x/vuln/cmd/govulncheck@$(GOVULNCHECK_VERSION) ./...
 
 .PHONY: test
 test: tidy

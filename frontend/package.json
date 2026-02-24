@@ -15,32 +15,32 @@
     "ci": "run-p type-check lint:ci format:ci",
     "format": "prettier --write src/",
     "predeploy": "npm run build",
-    "deploy": "rsync -avz --delete dist/ xakep@raspberrypi.local:/usr/share/nginx/www"
+    "deploy": "rsync -avz --delete --no-owner dist/ xakep@raspberrypi.local:/usr/share/nginx/www"
   },
   "dependencies": {
-    "@tabler/icons-vue": "^3.31.0",
-    "apexcharts": "^4.5.0",
-    "pinia": "^3.0.1",
-    "vue": "^3.5.13"
+    "@tabler/icons-vue": "^3.37.1",
+    "apexcharts": "^4.7.0",
+    "pinia": "^3.0.4",
+    "vue": "^3.5.29"
   },
   "devDependencies": {
-    "@tsconfig/node22": "^22.0.0",
+    "@tsconfig/node22": "^22.0.5",
     "@types/bootstrap": "^5.2.10",
-    "@types/node": "^22.13.4",
-    "@vitejs/plugin-vue": "^5.2.1",
+    "@types/node": "^22.19.11",
+    "@vitejs/plugin-vue": "^5.2.4",
     "@vue/eslint-config-prettier": "^10.2.0",
-    "@vue/eslint-config-typescript": "^14.4.0",
+    "@vue/eslint-config-typescript": "^14.7.0",
     "@vue/tsconfig": "^0.7.0",
-    "eslint": "^9.20.1",
-    "eslint-plugin-vue": "^9.32.0",
-    "jiti": "^2.4.2",
+    "eslint": "^9.39.3",
+    "eslint-plugin-vue": "^9.33.0",
+    "jiti": "^2.6.1",
     "npm-run-all2": "^7.0.2",
-    "prettier": "^3.5.1",
-    "sass-embedded": "^1.85.1",
+    "prettier": "^3.8.1",
+    "sass-embedded": "^1.97.3",
     "typescript": "~5.7.3",
-    "vite": "^6.1.0",
-    "vite-plugin-vue-devtools": "^7.7.2",
-    "vue-tsc": "^2.2.2"
+    "vite": "^6.4.1",
+    "vite-plugin-vue-devtools": "^7.7.9",
+    "vue-tsc": "^2.2.12"
   },
   "volta": {
     "node": "23.9.0"
