@@ -139,7 +139,12 @@ const getBatteryPercent = (voltage_mV: number) => {
   const lowerV = lut_mV[i + 1]
   const upperP = lut_pct[i]
   const lowerP = lut_pct[i + 1]
-  if (upperV === undefined || lowerV === undefined || upperP === undefined || lowerP === undefined) {
+  if (
+    upperV === undefined ||
+    lowerV === undefined ||
+    upperP === undefined ||
+    lowerP === undefined
+  ) {
     return 0
   }
 
