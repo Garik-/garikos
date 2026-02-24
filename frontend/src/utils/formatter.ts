@@ -10,7 +10,7 @@ export const dateToLocaleString = (date: Date) =>
   })
 
 export function formatBytes(bytes: number) {
-  const units = [
+  const units: ReadonlyArray<{ unit: string; value: number }> = [
     { unit: 'байт', value: 1 },
     { unit: 'Кбайт', value: 1024 },
     { unit: 'Мбайт', value: 1024 * 1024 },
@@ -18,10 +18,12 @@ export function formatBytes(bytes: number) {
     { unit: 'Tбайт', value: 1024 * 1024 * 1024 * 1024 },
   ]
 
-  let selectedUnit = units[0]
+  let selectedUnit = units[0] ?? { unit: 'байт', value: 1 }
   for (let i = units.length - 1; i >= 0; i--) {
-    if (bytes >= units[i].value) {
-      selectedUnit = units[i]
+    const unit = units[i]
+    if (!unit) continue
+    if (bytes >= unit.value) {
+      selectedUnit = unit
       break
     }
   }

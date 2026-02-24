@@ -9,6 +9,10 @@ const props = defineProps<{
   series: SeriesData
 }>()
 
+type DayWindow = 'morning' | 'day' | 'evening'
+type Bucket = { sum: number; count: number }
+type DayBuckets = Record<DayWindow, Bucket>
+
 function getWindow(date: Date) {
   const hour = date.getHours()
 
@@ -18,7 +22,7 @@ function getWindow(date: Date) {
 }
 
 function aggregateByDayAndWindow(seriesData: SeriesData) {
-  const days = new Map()
+  const days = new Map<string, DayBuckets>()
 
   for (const [ts, value] of seriesData) {
     const d = new Date(ts)
@@ -35,7 +39,9 @@ function aggregateByDayAndWindow(seriesData: SeriesData) {
     }
 
     const window = getWindow(d)
-    const bucket = days.get(dayKey)[window]
+    const dayBuckets = days.get(dayKey)
+    if (!dayBuckets) continue
+    const bucket = dayBuckets[window]
 
     bucket.sum += value
     bucket.count++
@@ -56,8 +62,13 @@ function calculateDailyConsumption(seriesData: SeriesData) {
   let daysCount = 0
 
   for (let i = 0; i < sortedDays.length - 1; i++) {
-    const today = days.get(sortedDays[i])
-    const nextDay = days.get(sortedDays[i + 1])
+    const todayKey = sortedDays[i]
+    const nextDayKey = sortedDays[i + 1]
+    if (!todayKey || !nextDayKey) continue
+
+    const today = days.get(todayKey)
+    const nextDay = days.get(nextDayKey)
+    if (!today || !nextDay) continue
 
     const morning = avg(today.morning.sum, today.morning.count)
     const day = avg(today.day.sum, today.day.count)
@@ -95,7 +106,7 @@ const getBatteryPercent = (voltage_mV: number) => {
   if (voltage_mV <= MIN_CHARGE_VOLTAGE) return 0
 
   // LUT в милливольтах (отсортирован по убыванию!)
-  const lut_mV = [
+  const lut_mV: readonly number[] = [
     MAX_CHARGE_VOLTAGE,
     4100,
     4000,
@@ -108,7 +119,7 @@ const getBatteryPercent = (voltage_mV: number) => {
     3000,
     MIN_CHARGE_VOLTAGE,
   ]
-  const lut_pct = [100, 95, 85, 75, 60, 40, 20, 10, 5, 1, 0]
+  const lut_pct: readonly number[] = [100, 95, 85, 75, 60, 40, 20, 10, 5, 1, 0]
 
   // Бинарный поиск
   let low = 0
@@ -116,19 +127,30 @@ const getBatteryPercent = (voltage_mV: number) => {
   while (low <= high) {
     const mid = (low + high) >>> 1
     const midVal = lut_mV[mid]
-    if (midVal === voltage_mV) return lut_pct[mid]
+    if (midVal === undefined) break
+    if (midVal === voltage_mV) return lut_pct[mid] ?? 0
     if (midVal < voltage_mV) high = mid - 1
     else low = mid + 1
   }
 
   // Интерполяция между high и low (теперь high < low)
-  const i = high
-  const rangeV = lut_mV[i] - lut_mV[i + 1]
-  const rangeP = lut_pct[i] - lut_pct[i + 1]
-  return lut_pct[i + 1] + Math.round(((voltage_mV - lut_mV[i + 1]) * rangeP) / rangeV)
+  const i = Math.max(0, Math.min(high, lut_mV.length - 2))
+  const upperV = lut_mV[i]
+  const lowerV = lut_mV[i + 1]
+  const upperP = lut_pct[i]
+  const lowerP = lut_pct[i + 1]
+  if (upperV === undefined || lowerV === undefined || upperP === undefined || lowerP === undefined) {
+    return 0
+  }
+
+  const rangeV = upperV - lowerV
+  const rangeP = upperP - lowerP
+  if (rangeV === 0) return lowerP
+
+  return lowerP + Math.round(((voltage_mV - lowerV) * rangeP) / rangeV)
 }
 
-const percent = computed(() => getBatteryPercent(props.value))
+const percent = computed<number>(() => getBatteryPercent(props.value))
 
 const dailyConsumptionMv = computed(() => calculateDailyConsumption(props.series))
 

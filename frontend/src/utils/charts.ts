@@ -47,4 +47,4 @@ export const ru = {
   },
 }
 
-export type SeriesData = number[][]
+export type SeriesData = Array<[number, number]>
