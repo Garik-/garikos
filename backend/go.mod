@@ -3,7 +3,7 @@ module garikos
 go 1.26
 
 require (
-	github.com/shirou/gopsutil/v4 v4.26.2
+	github.com/shirou/gopsutil/v4 v4.26.3
 	golang.org/x/sync v0.20.0
 )
 
